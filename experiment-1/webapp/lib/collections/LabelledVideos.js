@@ -25,10 +25,5 @@ LabelledVideos.attachSchema(new SimpleSchema({
     type: String,
     label: "Worker ID processing this video",
     optional: true
-  },
-  spectrogram: {
-    type: [[Number]],
-    label: "Processed spectogram matrix; Random segments are input to the machine learning model",
-    optional: true
   }
 }));

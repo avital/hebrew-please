@@ -37,11 +37,9 @@ class VideoProcessingWorker {
         Fiber(() => {
           if (err) {
             LabelledVideos.update(video._id, {$set: {state: 'ERROR'}});
-
             console.error(`Worker ${worker.id}: Error processing ${video.url}.`);
           } else {
             LabelledVideos.update(video._id, {$set: {state: 'PROCESSED'}});
-
             console.log(`Worker ${worker.id}: Finished processing ${video.url}.`);
           }
         }).run();
