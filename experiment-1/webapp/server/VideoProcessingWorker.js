@@ -32,7 +32,7 @@ class VideoProcessingWorker {
     console.log(`Worker ${worker.id}: Processing ${video.url}`);
 
     const cp = child_process.exec(
-      "python3 /Users/avital/tmp/hebrew-please/exp1/process-video/process-video.py " + video.videoId,
+      `python3 ${process.env.PWD}/../process-video/process-video.py ${video.videoId}`,
       function(err, stdout, stderr) {
         Fiber(() => {
           if (err) {
