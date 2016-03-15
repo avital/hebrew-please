@@ -25,5 +25,10 @@ LabelledVideos.attachSchema(new SimpleSchema({
     type: String,
     label: "Worker ID processing this video",
     optional: true
+  },
+  duration: {
+    type: Number,
+    label: "Duration of video in seconds",
+    optional: true
   }
 }));

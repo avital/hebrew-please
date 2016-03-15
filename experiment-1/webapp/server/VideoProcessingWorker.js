@@ -1,8 +1,10 @@
 import Fiber from 'fibers';
 import Future from 'fibers/future';
 import child_process from 'child_process';
+import fs from 'fs';
 
 const sleep = Meteor._sleepForMs;
+const readFile = Meteor.wrapAsync(fs.readFile);
 
 class VideoProcessingWorker {
   constructor() {
@@ -39,8 +41,12 @@ class VideoProcessingWorker {
             LabelledVideos.update(video._id, {$set: {state: 'ERROR'}});
             console.error(`Worker ${worker.id}: Error processing ${video.url}.`);
           } else {
-            LabelledVideos.update(video._id, {$set: {state: 'PROCESSED'}});
-            console.log(`Worker ${worker.id}: Finished processing ${video.url}.`);
+            var metadataFile =
+                  `${process.env.PWD}/../processed-videos/${video.videoId}/audio.info.json`;
+            const duration = JSON.parse(readFile(metadataFile)).duration;
+            LabelledVideos.update(video._id, {$set: {state: 'PROCESSED', duration}});
+            console.log(
+              `Worker ${worker.id}: Finished processing ${video.url} (video length = ${duration}s)`);
           }
         }).run();
       });

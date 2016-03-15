@@ -66,7 +66,8 @@ def download_audio(video_id, downloaded_audio_file):
     ydl = youtube_dl.YoutubeDL({
         'format': 'worstaudio',
         'outtmpl': downloaded_audio_file,
-        'quiet': True
+        'quiet': True,
+        'writeinfojson': True
     })
     ydl.download(["https://www.youtube.com/watch?v={0}".format(video_id)])
     log('DONE.')

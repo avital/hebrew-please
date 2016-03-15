@@ -13,6 +13,10 @@ LabelledSegments.attachSchema(new SimpleSchema({
     type: Number,
     label: "Segment ends <...> seconds into the video"
   },
+  state: {
+    type: String,
+    label: "One of: NEW, PROCESSING, PROCESSED, ERROR"
+  },
   spectrogram: {
     type: [[Number]],
     label: "Processed spectogram matrix; the input to the machine learning model"
