@@ -14,10 +14,14 @@ function handleReprocess(videoId) {
   Meteor.call("reprocessVideo", videoId);
 }
 
+function handleExtractSegment(videoId) {
+  Meteor.call("extractSegment", videoId);
+}
+
 class VideosView extends Component {
   render() {
     return <div>
-      <VideoList videos={LabelledVideos.find().fetch()} onReprocess={handleReprocess} />
+      <VideoList videos={LabelledVideos.find().fetch()} onReprocess={handleReprocess} onExtractSegment={handleExtractSegment} />
       <hr />
       <AddVideoForm store={ReduxStore} onSubmit={handleAdd} />
     </div>

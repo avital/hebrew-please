@@ -30,11 +30,12 @@ def __main__():
 
     downloaded_audio_file = '{0}/audio'.format(processed_base_dir)
     converted_audio_file = '{0}/audio.wav'.format(processed_base_dir)
-    spectrogram_file = '{0}/spectrogram.json'.format(processed_base_dir)
+    spectrogram_npy_file = '{0}/spectrogram.npy'.format(processed_base_dir)
+    spectrogram_json_file = '{0}/spectrogram.json'.format(processed_base_dir)
 
     download_audio(video_id, downloaded_audio_file)
     convert_audio_to_wav(downloaded_audio_file, converted_audio_file)
-    write_spectrogram(converted_audio_file, spectrogram_file)
+    write_spectrogram(converted_audio_file, spectrogram_npy_file, spectrogram_json_file)
 
 def check_args():
     if len(sys.argv) < 2:
@@ -79,7 +80,7 @@ def convert_audio_to_wav(downloaded_audio_file, converted_audio_file):
                            str(SAMPLE_FREQ), "-ac", "1", converted_audio_file])
     log('DONE.')
 
-def write_spectrogram(converted_audio_file, spectrogram_file):
+def write_spectrogram(converted_audio_file, spectrogram_npy_file, spectrogram_json_file):
     log('')
     log('Writing spectogram ({0})...'.format(spectrogram_file))
     rate, data = wavfile.read(converted_audio_file)
@@ -92,8 +93,10 @@ def write_spectrogram(converted_audio_file, spectrogram_file):
 #    plt.pcolormesh(LSxx)
 #    plt.show()
 
-    with open(spectrogram_file, 'w') as f:
+    with open('{0}.json'.format(spectrogram_json_file), 'w') as f:
         f.write(NumpyAwareJSONEncoder().encode(LSxx))
+
+    numpy.save(spectrogram_npy_file, LSxx)
 
     log('DONE.')
 

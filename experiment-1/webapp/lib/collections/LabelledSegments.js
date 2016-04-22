@@ -19,7 +19,8 @@ LabelledSegments.attachSchema(new SimpleSchema({
   },
   spectrogram: {
     type: [[Number]],
-    label: "Processed spectogram matrix; the input to the machine learning model"
+    label: "Processed spectogram matrix; the input to the machine learning model",
+    optional: true
   },
   isObjectionable: {
     type: Boolean,

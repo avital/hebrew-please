@@ -22,5 +22,21 @@ Meteor.methods({
       $set: {state: 'NEW'},
       $unset: {processingByWorker: ""}
     });
+  },
+  extractSegment: function(videoId) {
+    console.log("extractSegment", videoId);
+    const video = LabelledVideos.findOne(
+      {videoId},
+      {fields: {isLargelyObjectionable: 1, duration: 1}});
+
+    const startSeconds = Math.floor(Math.random() * video.duration);
+
+    LabelledSegments.insert({
+      videoId: videoId,
+      state: "new",
+      startSeconds: startSeconds,
+      endSeconds: startSeconds + 2,
+      isObjectionable: video.isLargelyObjectionable
+    });
   }
 });
