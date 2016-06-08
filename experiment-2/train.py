@@ -10,9 +10,8 @@ import os
 
 model = Sequential()
 
-model.add(ZeroPadding2D((1, 1), input_shape=(1, 128, 191)))
+model.add(ZeroPadding2D((1, 1), input_shape=(1, 128, 196)))
 
-model.add(ZeroPadding2D((1, 1)))
 model.add(Convolution2D(6, 4, 4, subsample=(1, 2), W_regularizer=l2(0.01)))
 model.add(LeakyReLU())
 model.add(Dropout(0.25))
@@ -31,7 +30,7 @@ model.add(Convolution2D(6, 1, 4, subsample=(1, 2), W_regularizer=l2(0.01)))
 model.add(LeakyReLU())
 model.add(Dropout(0.25))
 
-model.add(MaxPooling2D(pool_size=(64, 1)))
+model.add(MaxPooling2D(pool_size=(63, 1)))
 
 model.add(Flatten())
 
@@ -53,20 +52,17 @@ data = []
 labels = []
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
-for snippet_id in os.listdir('data'):
-    dir = 'data/{0}'.format(snippet_id)
+for snippet_id in os.listdir('data/samples'):
+    dir = 'data/samples/{0}'.format(snippet_id)
     data_tensor = numpy.expand_dims(numpy.load('{0}/spectrogram.npy'.format(dir)), axis=0)
     data.append(data_tensor)
-    with open('{0}/class'.format(dir), 'r') as file:
+    with open('{0}/class.txt'.format(dir), 'r') as file:
         labels.append(int(file.read()))
 
 data = numpy.stack(data)
 labels = numpy.array(labels)
 
-print data.shape
-print labels.shape
-
-model.fit(data, labels, nb_epoch=2000, batch_size=32, validation_split=0.2)
+model.fit(data, labels, nb_epoch=30, batch_size=32, validation_split=0.2)
 
 print 'Saving model...'
 json_string = model.to_json()

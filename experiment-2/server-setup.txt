@@ -1,1 +1,4 @@
-sudo pip install keras && sudo apt-get install libhdf5-dev -y && sudo pip install h5py
+sudo pip install keras && sudo apt-get install libhdf5-dev -y && sudo pip install h5py && sudo apt-get install python-matplotlib -y && sudo apt-get install libatlas-base-dev gfortran python-pip -y && sudo pip install scipy --upgrade
+
+sudo add-apt-repository ppa:mc3man/trusty-media -y && sudo apt-get update -y && sudo apt-get dist-upgrade -y && sudo apt-get install ffmpeg -y
+

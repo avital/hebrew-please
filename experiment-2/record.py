@@ -25,12 +25,12 @@ audio = pyaudio.PyAudio()
 
 RATE = 22050
 CHUNK = 1024
-BUFFER_SECS = 1
+BUFFER_SECS = 1.03
 FORMAT=pyaudio.paInt16
 
 model = None
-#model = model_from_json(open('my_model_architecture.json').read())
-#model.load_weights('my_model_weights.h5')
+model = model_from_json(open('my_model_architecture.json').read())
+model.load_weights('my_model_weights.h5')
 
 def getchar():
     import tty, sys, termios  # raises ImportError if unsupported
@@ -57,6 +57,7 @@ class AudioRecording(Thread):
         print("* recording")
 
         frames = []
+        test_frames = []
 
         global quit
         global dump_0
@@ -64,32 +65,49 @@ class AudioRecording(Thread):
         global dump_complete
         global test
 
+        num_frames = 0
+
         while not quit:
+            num_frames = num_frames + 1
+            if num_frames > 23 and ((num_frames % 15) == 0) and model:
+                test = True
+
             data = stream.read(CHUNK)
+            test_frames.append(data)
+            if len(test_frames) > BUFFER_SECS * RATE / CHUNK:
+                test_frames.pop(0)
 
             if dump_0 or dump_1:
                 frames.append(data)
 
                 if dump_complete:
-                    snippet_id = uuid.uuid4()
-                    dir = 'data/{0}/{1}'.format(1 if dump_1 else 0, snippet_id)
-                    make_sure_path_exists(dir)
-                    waveform = b''.join(frames)
-                    save_mp3_file(dir, waveform)
-                    frames = []
-
-                    print "Saved in {0}\r\n".format(dir)
+                    DumpFrames(frames, 1 if dump_1 else 0).start()
                     dump_complete = False
                     dump_0 = False
                     dump_1 = False
+                    frames = []
 
             if test:
-                TestFrames(frames).start()
+                TestFrames(test_frames).start()
                 test = False
 
         stream.stop_stream()
         stream.close()
         audio.terminate()
+
+class DumpFrames(Thread):
+    def __init__(self, frames, audio_class):
+        Thread.__init__(self)
+        self.frames = frames
+        self.audio_class = audio_class
+
+    def run(self):
+        snippet_id = uuid.uuid4()
+        dir = 'data/{0}/{1}'.format(self.audio_class, snippet_id)
+        make_sure_path_exists(dir)
+        waveform = b''.join(self.frames)
+        save_mp3_file(dir, waveform)
+        print "Saved in {0}\r\n".format(dir)
 
 class TestFrames(Thread):
     def __init__(self, frames):
@@ -100,6 +118,10 @@ class TestFrames(Thread):
         waveform = b''.join(self.frames)
         f, t, Sxx = signal.spectrogram(map(ord, waveform), fs=RATE)
         LSxx = spectrogram_log_frequency_scale(f, Sxx)
+
+        # Convert from 128x201 to 128x196 as the model expects
+        LSxx = numpy.delete(LSxx, [0,1,2,3,4], axis=1)
+
         LSxx = numpy.expand_dims(LSxx, axis=0) # Make into tensor with depth 1, as that's the input to a ConvNet
         LSxx = numpy.expand_dims(LSxx, axis=0) # Make into data set with size 1
         prediction = model.predict(LSxx)[0][0]
@@ -143,7 +165,6 @@ def save_mp3_file(dir, waveform):
     mp3Filename = '{0}/audio.mp3'.format(dir)
     os.system('ffmpeg -i {0} -vn -ar {1} -ac 1 -ab 128k -f mp3 {2}'.format(
         waveFilename, RATE, mp3Filename))
-    os.remove(waveFilename)
 
 def save_spectrogram(dir, waveform):
     f, t, Sxx = signal.spectrogram(map(ord, waveform), fs=RATE)

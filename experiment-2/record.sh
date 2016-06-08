@@ -1,2 +1,2 @@
 #!/bin/bash
-python record.py
+KERAS_BACKEND=theano python record.py
