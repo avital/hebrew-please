@@ -19,6 +19,7 @@ quit = False
 test = False
 dump_0 = False
 dump_1 = False
+dump_complete = False
 
 audio = pyaudio.PyAudio()
 
@@ -60,37 +61,31 @@ class AudioRecording(Thread):
         global quit
         global dump_0
         global dump_1
+        global dump_complete
         global test
-        global model
-        num_frames = 0
 
         while not quit:
-            num_frames = num_frames + 1
-            if (num_frames % 20) == 0 and model:
-                test = True
-
             data = stream.read(CHUNK)
-            frames.append(data)
-            if len(frames) > BUFFER_SECS * RATE / CHUNK:
-                frames.pop(0)
 
-                if dump_0 or dump_1:
+            if dump_0 or dump_1:
+                frames.append(data)
+
+                if dump_complete:
                     snippet_id = uuid.uuid4()
-                    dir = 'data/{0}'.format(snippet_id)
+                    dir = 'data/{0}/{1}'.format(1 if dump_1 else 0, snippet_id)
                     make_sure_path_exists(dir)
-
                     waveform = b''.join(frames)
-                    save_wav_file(dir, waveform)
-                    save_spectrogram(dir, waveform)
-                    save_class(dir, dump_1)
+                    save_mp3_file(dir, waveform)
+                    frames = []
 
                     print "Saved in {0}\r\n".format(dir)
-#                    dump_0 = False
-#                    dump_1 = False
+                    dump_complete = False
+                    dump_0 = False
+                    dump_1 = False
 
-                if test:
-                    TestFrames(frames).start()
-                    test = False
+            if test:
+                TestFrames(frames).start()
+                test = False
 
         stream.stop_stream()
         stream.close()
@@ -136,13 +131,19 @@ class PlayStopWhistling(Thread):
         # cleanup stuff.
         stream.close()
 
-def save_wav_file(dir, waveform):
-    waveFile = wave.open('{0}/audio.wav'.format(dir), 'wb')
+def save_mp3_file(dir, waveform):
+    waveFilename = '{0}/audio.wav'.format(dir)
+    waveFile = wave.open(waveFilename, 'wb')
     waveFile.setnchannels(1)
     waveFile.setsampwidth(audio.get_sample_size(FORMAT))
     waveFile.setframerate(RATE)
     waveFile.writeframes(waveform)
     waveFile.close()
+
+    mp3Filename = '{0}/audio.mp3'.format(dir)
+    os.system('ffmpeg -i {0} -vn -ar {1} -ac 1 -ab 128k -f mp3 {2}'.format(
+        waveFilename, RATE, mp3Filename))
+    os.remove(waveFilename)
 
 def save_spectrogram(dir, waveform):
     f, t, Sxx = signal.spectrogram(map(ord, waveform), fs=RATE)
@@ -177,6 +178,7 @@ def main():
     global quit
     global dump_1
     global dump_0
+    global dump_complete
     global test
 
     while not quit:
@@ -190,8 +192,7 @@ def main():
         elif ch == '0':
             dump_0 = True
         elif ch == '-':
-            dump_1 = False
-            dump_0 = False
+            dump_complete = True
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 main()
