@@ -15,5 +15,5 @@ scp -i "${HOME}/avital2.pem" train.py ubuntu@${GPU_MACHINE}:~/hebrew-please/trai
 
 #ssh -i "${HOME}/avital2.pem" ubuntu@${GPU_MACHINE} 'cd hebrew-please && sudo nvidia-docker run -v ${PWD}:/root/hebrew-please avital/keras bash -c "cd ../hebrew-please && THEANO_FLAGS=device=gpu,floatX=float32 python train.py"'
 
-ssh -i "${HOME}/avital2.pem" ubuntu@${GPU_MACHINE} 'cd hebrew-please && LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64 KERAS_BACKEND=tensorflow python train.py'
+ssh -i "${HOME}/avital2.pem" ubuntu@${GPU_MACHINE} 'cd hebrew-please && nohup bash -c "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64 KERAS_BACKEND=tensorflow python train.py"'
 

@@ -1,18 +1,51 @@
 from keras.models import Sequential
 from keras.optimizers import Adadelta
 from keras.layers.core import Dense, Activation, Flatten, Dropout
-from keras.layers.convolutional import Convolution2D, MaxPooling2D
+from keras.layers.convolutional import Convolution2D, MaxPooling2D, ZeroPadding2D
+from keras.layers.advanced_activations import LeakyReLU
+from keras.regularizers import l2, activity_l2
 import numpy
 
 import os
 
 model = Sequential()
-model.add(Convolution2D(5, 7, 3, subsample=(2, 2), activation='tanh', input_shape=(1, 128, 95)))
-model.add(MaxPooling2D(pool_size=(7, 4)))
+
+model.add(ZeroPadding2D((1, 1), input_shape=(1, 128, 191)))
+
+model.add(ZeroPadding2D((1, 1)))
+model.add(Convolution2D(6, 4, 4, subsample=(1, 2), W_regularizer=l2(0.01)))
+model.add(LeakyReLU())
+model.add(Dropout(0.25))
+
+model.add(ZeroPadding2D((1, 1)))
+model.add(Convolution2D(24, 4, 3, subsample=(1, 2), W_regularizer=l2(0.01)))
+model.add(LeakyReLU())
+model.add(Dropout(0.25))
+
+model.add(ZeroPadding2D((1, 1)))
+model.add(Convolution2D(24, 4, 3, subsample=(2, 2), W_regularizer=l2(0.01)))
+model.add(LeakyReLU())
+model.add(Dropout(0.25))
+
+model.add(Convolution2D(6, 1, 4, subsample=(1, 2), W_regularizer=l2(0.01)))
+model.add(LeakyReLU())
+model.add(Dropout(0.25))
+
+model.add(MaxPooling2D(pool_size=(64, 1)))
+
 model.add(Flatten())
+
+model.add(Dense(16))
+model.add(LeakyReLU())
 model.add(Dropout(0.5))
+
+model.add(Dense(16))
+model.add(LeakyReLU())
+model.add(Dropout(0.5))
+
 model.add(Dense(1))
 model.add(Activation('sigmoid'))
+
 model.compile(optimizer=Adadelta(),
               loss='binary_crossentropy')
 
@@ -33,7 +66,7 @@ labels = numpy.array(labels)
 print data.shape
 print labels.shape
 
-model.fit(data, labels, nb_epoch=5000, batch_size=32, validation_split=0.2)
+model.fit(data, labels, nb_epoch=2000, batch_size=32, validation_split=0.2)
 
 print 'Saving model...'
 json_string = model.to_json()

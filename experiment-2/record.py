@@ -22,35 +22,28 @@ dump_1 = False
 
 audio = pyaudio.PyAudio()
 
-RATE = 11025
+RATE = 22050
 CHUNK = 1024
-BUFFER_SECS = 2
-FORMAT=pyaudio.paInt8
+BUFFER_SECS = 1
+FORMAT=pyaudio.paInt16
 
 model = None
-model = model_from_json(open('my_model_architecture.json').read())
-model.load_weights('my_model_weights.h5')
+#model = model_from_json(open('my_model_architecture.json').read())
+#model.load_weights('my_model_weights.h5')
 
 def getchar():
+    import tty, sys, termios  # raises ImportError if unsupported
+
+    fd = sys.stdin.fileno()
+    oldSettings = termios.tcgetattr(fd)
+
     try:
-        # for Windows-based systems
-        import msvcrt # If successful, we are on Windows
-        return msvcrt.getch()
+        tty.setraw(fd)
+        answer = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, oldSettings)
 
-    except ImportError:
-        # for POSIX-based systems (with termios & tty support)
-        import tty, sys, termios  # raises ImportError if unsupported
-
-        fd = sys.stdin.fileno()
-        oldSettings = termios.tcgetattr(fd)
-
-        try:
-            tty.setraw(fd)
-            answer = sys.stdin.read(1)
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, oldSettings)
-
-        return answer
+    return answer
 
 class AudioRecording(Thread):
     def run(self):
@@ -92,25 +85,33 @@ class AudioRecording(Thread):
                     save_class(dir, dump_1)
 
                     print "Saved in {0}\r\n".format(dir)
-                    dump_0 = False
-                    dump_1 = False
+#                    dump_0 = False
+#                    dump_1 = False
 
                 if test:
-                    waveform = b''.join(frames)
-                    f, t, Sxx = signal.spectrogram(map(ord, waveform), fs=RATE)
-                    LSxx = spectrogram_log_frequency_scale(f, Sxx)
-                    LSxx = numpy.expand_dims(LSxx, axis=0) # Make into tensor with depth 1, as that's the input to a ConvNet
-                    LSxx = numpy.expand_dims(LSxx, axis=0) # Make into data set with size 1
-                    prediction = model.predict(LSxx)[0][0]
-                    print prediction
-                    print '\r\n'
-                    if prediction > 0.99:
-                        PlayStopWhistling().start()
+                    TestFrames(frames).start()
                     test = False
 
         stream.stop_stream()
         stream.close()
         audio.terminate()
+
+class TestFrames(Thread):
+    def __init__(self, frames):
+        Thread.__init__(self)
+        self.frames = frames
+
+    def run(self):
+        waveform = b''.join(self.frames)
+        f, t, Sxx = signal.spectrogram(map(ord, waveform), fs=RATE)
+        LSxx = spectrogram_log_frequency_scale(f, Sxx)
+        LSxx = numpy.expand_dims(LSxx, axis=0) # Make into tensor with depth 1, as that's the input to a ConvNet
+        LSxx = numpy.expand_dims(LSxx, axis=0) # Make into data set with size 1
+        prediction = model.predict(LSxx)[0][0]
+        print prediction
+        print '\r\n'
+        if prediction > 0.99:
+            PlayStopWhistling().start()
 
 class PlayStopWhistling(Thread):
     def run(self):
@@ -188,6 +189,9 @@ def main():
             dump_1 = True
         elif ch == '0':
             dump_0 = True
+        elif ch == '-':
+            dump_1 = False
+            dump_0 = False
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 main()
